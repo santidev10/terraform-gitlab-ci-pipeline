@@ -1,0 +1,57 @@
+default:
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint:
+      - /usr/bin/env
+      - "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+  before_script:
+    - terraform init
+  cache:
+    key: terraform
+    paths:
+      - .terraform
+
+stages:
+  - stg_validate
+  - stg_plan
+  - stg_apply
+  - stg_destroy
+
+  jb-tf-validate:
+  stage: stg_validate
+  script:
+    - echo " Validating my terraform code"
+    - terraform validate
+  except:
+    refs:
+      - master
+jb-tf-plan:
+  stage: stg_plan
+  script:
+    - echo "Generating terraform plan and output to file 'plan' "
+    - terraform plan --out plan
+  artifacts:
+    paths:
+      - plan
+
+jb-tf-apply:
+  stage: stg_apply
+  script:
+    - echo "Spinning up resources via terraform apply step"
+    - terraform apply --auto-approve plan
+    - terraform state list
+  when: always
+  allow_failure: false
+  artifacts:
+    paths:
+      - terraform.tfstate
+jb-tf-destroy:
+  stage: stg_destroy
+  script:
+    - echo "Destroying resources"
+    - terraform destroy --auto-approve
+  when: manual
+  only:
+    refs:
+      - develop
