@@ -18,7 +18,7 @@ stages:
   - stg_apply
   - stg_destroy
 
-  jb-tf-validate:
+jb-tf-validate:
   stage: stg_validate
   script:
     - echo " Validating my terraform code"
